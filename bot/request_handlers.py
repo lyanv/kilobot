@@ -3,13 +3,9 @@ import logging
 from telegram import Update
 from telegram.ext import CallbackContext
 
-from settings import ADMIN_ID, level, handler
+from settings import ADMIN_ID
 from .keyboard import get_approve_keyboard
 from .limits import set_user_limits, get_user_info
-
-logger_reqhandlers = logging.getLogger()
-logger_reqhandlers.setLevel(level)
-logger_reqhandlers.addHandler(handler)
 
 
 async def request_access(update: Update, context: CallbackContext):

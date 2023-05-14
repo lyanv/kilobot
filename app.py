@@ -2,12 +2,11 @@ from quart import Quart, request
 from telegram import Update
 
 from bot.bot import application
-from settings import PORT, WEBHOOKURL, handler, level
+from settings import PORT, WEBHOOKURL, level
 
 app = Quart(__name__)
 
 app.logger.setLevel(level)
-app.logger.addHandler(handler)
 
 
 @app.route('/setwebhook', methods=['GET', 'POST'])

@@ -4,7 +4,7 @@ import os
 import pytz
 from dotenv import load_dotenv
 
-load_dotenv(".env", override=True)
+load_dotenv(".env")
 
 TZ = os.environ.get("TZ")
 tz = pytz.timezone(TZ)
@@ -20,10 +20,7 @@ DROP_DATA, = range(1)
 WEBHOOKURL = os.environ.get("WEBHOOKURL")
 PORT = os.environ.get("PORT")
 
-formatter = logging.Formatter('%(asctime)s - %(name)s - %(levelname)s - %(message)s')
 level = logging.getLevelName(LOGGER_MODE)
-handler = logging.FileHandler('chatbot.log')
-handler.setFormatter(formatter)
 
 LIMITS = {
     'standard': {
@@ -43,5 +40,3 @@ LIMITS = {
         'limit_weekly': 0
     }
 }
-
-

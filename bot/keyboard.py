@@ -2,11 +2,7 @@ import logging
 
 from telegram import InlineKeyboardButton, InlineKeyboardMarkup, ReplyKeyboardMarkup, KeyboardButton
 
-from settings import MODELS, level, handler
-
-logger_keyboard = logging.getLogger()
-logger_keyboard.setLevel(level)
-logger_keyboard.addHandler(handler)
+from settings import MODELS
 
 def get_request_access_keyboard():
     keyboard = [

@@ -7,14 +7,10 @@ from telegram import Update
 from telegram.constants import ParseMode
 from telegram.ext import CallbackContext, ConversationHandler
 
-from settings import REJECT_COOLING_PERIOD_DAYS, REQUEST_COOLING_PERIOD_SEC, DROP_DATA, tz, level, handler
+from settings import REJECT_COOLING_PERIOD_DAYS, REQUEST_COOLING_PERIOD_SEC, DROP_DATA, tz, level
 from storage.database import db
 from .keyboard import get_model_choice_keyboard, get_restart_keyboard, get_request_access_keyboard, get_db_keyboard
 from .limits import cooldown, get_user_info, check_limits, update_request_data
-
-logger_handlers = logging.getLogger()
-logger_handlers.setLevel(level)
-logger_handlers.addHandler(handler)
 
 
 async def restart_bot(update: Update, context: CallbackContext):

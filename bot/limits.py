@@ -1,14 +1,9 @@
-import logging
 import time
 from collections import deque
 from datetime import datetime, timedelta
 
-from settings import LIMITS, REQUEST_COOLING_PERIOD_SEC, tz, level, handler
+from settings import LIMITS, REQUEST_COOLING_PERIOD_SEC, tz
 from storage.database import db
-
-logger_limits = logging.getLogger()
-logger_limits.setLevel(level)
-logger_limits.addHandler(handler)
 
 
 def cooldown(user_id, user_req_tss=None):

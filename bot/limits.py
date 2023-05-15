@@ -1,4 +1,3 @@
-import logging
 import time
 from collections import deque
 from datetime import datetime, timedelta
@@ -98,7 +97,6 @@ async def check_limits(user_id, db_user_data):
 async def update_request_data(user_id):
     user_doc = db.collection('users').document(str(user_id))
     db_user_data = await user_doc.get()
-    logging.debug(f"db_user_data: {db_user_data}")
     daily_limit = db_user_data.get("limit_daily")
     weekly_limit = db_user_data.get("limit_weekly")
     user_doc.update({

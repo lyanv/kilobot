@@ -32,6 +32,12 @@ async def gpt_request(update, context) -> None:
             },
         )
     resp = response.json()['choices'][0]['message']['content']
+    numtokens_out = response.json()['usage']['prompt_tokens']
+    numtokens_in = response.json()['usage']['completion_tokens']
+
+    await context.bot.send_message(
+        chat_id=update.effective_chat.id,
+        text=f"Длина запроса: {numtokens_out} токенов\nДлина ответа: {numtokens_in} токенов")
 
     split_messages = re.split(r'(```.*?```)', resp, flags=re.DOTALL)
 

@@ -1,3 +1,5 @@
+import logging
+
 from quart import Quart, request
 from telegram import Update
 
@@ -6,7 +8,7 @@ from settings import PORT, WEBHOOKURL, level
 
 app = Quart(__name__)
 
-app.logger.setLevel(level)
+logging.basicConfig(level=level)
 
 
 @app.route('/setwebhook', methods=['GET', 'POST'])

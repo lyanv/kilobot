@@ -1,8 +1,7 @@
-import logging
-
 from telegram import InlineKeyboardButton, InlineKeyboardMarkup, ReplyKeyboardMarkup, KeyboardButton
 
 from settings import MODELS
+
 
 def get_request_access_keyboard():
     keyboard = [

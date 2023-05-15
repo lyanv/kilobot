@@ -1,4 +1,3 @@
-
 from telegram.ext import CommandHandler, MessageHandler, filters, ApplicationBuilder, CallbackQueryHandler, \
     ConversationHandler
 
@@ -7,7 +6,7 @@ from .handlers import start, restart_bot, handle_model_choice, handle_message, s
     drop_data
 from .request_handlers import handle_request, request_access
 
-application = ApplicationBuilder().token(TELEGRAM_API_KEY).build()
+application = ApplicationBuilder().token(TELEGRAM_API_KEY).connect_timeout(600).build()
 application.bot_data["admin_id"] = ADMIN_ID
 application.add_handler(CommandHandler('Start', start))
 application.add_handler(MessageHandler(filters.Regex("^Перезапустить бота$"), restart_bot))

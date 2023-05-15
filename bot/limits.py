@@ -1,3 +1,4 @@
+import logging
 import time
 from collections import deque
 from datetime import datetime, timedelta
@@ -56,8 +57,8 @@ def create_reply_noreqs(limits):
 
 
 async def check_limits(user_id, db_user_data):
-    daily_limit = db_user_data.get("limit_daily")
-    weekly_limit = db_user_data.get("limit_weekly")
+    daily_limit = db_user_data.get("limit_daily", None)
+    weekly_limit = db_user_data.get("limit_weekly", None)
     daily_requests = deque(maxlen=daily_limit)
     weekly_requests = deque(maxlen=weekly_limit)
 
@@ -87,8 +88,9 @@ async def check_limits(user_id, db_user_data):
         "weekly_requests": list(weekly_requests)
     })
 
-    if len(daily_requests) >= daily_limit or len(weekly_requests) >= weekly_limit:
-        return f"Превышен лимит запросов"
+    if db_user_data.get("status") != "unlimited":
+        if len(daily_requests) >= daily_limit or len(weekly_requests) >= weekly_limit:
+            return f"Превышен лимит запросов"
     else:
         return None
 
@@ -96,6 +98,7 @@ async def check_limits(user_id, db_user_data):
 async def update_request_data(user_id):
     user_doc = db.collection('users').document(str(user_id))
     db_user_data = await user_doc.get()
+    logging.debug(f"db_user_data: {db_user_data}")
     daily_limit = db_user_data.get("limit_daily")
     weekly_limit = db_user_data.get("limit_weekly")
     user_doc.update({
@@ -106,6 +109,10 @@ async def update_request_data(user_id):
     current_daily_requests.append(datetime.now(tz).strftime("%Y-%m-%d %H:%M:%S"))
     current_weekly_requests = db_user_data.to_dict().get('weekly_requests', [])
     current_weekly_requests.append(datetime.now(tz).strftime("%Y-%m-%d %H:%M:%S"))
+
+    if db_user_data.get("status") == "unlimited":
+        daily_limit = 5
+        weekly_limit = 5
 
     if len(current_daily_requests) > daily_limit:
         current_daily_requests.pop(0)

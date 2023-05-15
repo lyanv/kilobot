@@ -1,16 +1,14 @@
-import logging
-import re
-from datetime import timedelta, datetime
 import json
-import openai
+from datetime import timedelta, datetime
+
 from telegram import Update
-from telegram.constants import ParseMode
 from telegram.ext import CallbackContext, ConversationHandler
 
-from settings import REJECT_COOLING_PERIOD_DAYS, REQUEST_COOLING_PERIOD_SEC, DROP_DATA, tz, level
+from settings import REJECT_COOLING_PERIOD_DAYS, REQUEST_COOLING_PERIOD_SEC, DROP_DATA, tz
 from storage.database import db
 from .keyboard import get_model_choice_keyboard, get_restart_keyboard, get_request_access_keyboard, get_db_keyboard
 from .limits import cooldown, get_user_info, check_limits, update_request_data
+from .model_request import gpt_request
 
 
 async def restart_bot(update: Update, context: CallbackContext):
@@ -122,34 +120,5 @@ async def handle_message(update: Update, context: CallbackContext) -> None:
         await restart_bot(update, context)
         return
 
-    user_message = update.message.text
-
-    if 'messages' not in context.user_data:
-        context.user_data['messages'] = [
-            {"role": "system", "content": "ИИ-ассистент"}
-        ]
-
-    context.user_data['messages'].append({"role": "user", "content": user_message})
-
-    completion = openai.ChatCompletion.create(
-        model=context.user_data['selected_model'],
-        messages=context.user_data['messages'],
-        max_tokens=1000,
-        temperature=0.7,
-    )
-    chat_response = completion.choices[0].message.content
-    context.user_data['messages'].append({"role": "assistant", "content": chat_response})
-
-    split_messages = re.split(r'(```.*?```)', chat_response, flags=re.DOTALL)
-
-    for msg in split_messages:
-        if msg.strip().startswith("`"):
-            mode = ParseMode.MARKDOWN_V2
-        else:
-            mode = None
-
-        await context.bot.send_message(chat_id=update.effective_chat.id,
-                                       text=msg,
-                                       reply_markup=get_restart_keyboard(),
-                                       parse_mode=mode)
+    await gpt_request(update, context)
     await update_request_data(user_id)

@@ -1,5 +1,3 @@
-import logging
-
 from telegram import Update
 from telegram.ext import CallbackContext
 
@@ -19,7 +17,6 @@ async def request_access(update: Update, context: CallbackContext):
         text=f"Заявка от {user_name} (ID: {user_id}, FullName: {user_fullname}). Выберите доступ:",
         reply_markup=get_approve_keyboard(user_id, user_name, user_fullname)
     )
-    # await guess_number_game(update, context)
 
 
 async def handle_request(update: Update, context: CallbackContext):

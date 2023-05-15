@@ -19,7 +19,8 @@ LOGGER_MODE = os.environ.get("LOGGER_MODE")
 DROP_DATA, = range(1)
 WEBHOOKURL = os.environ.get("WEBHOOKURL")
 PORT = os.environ.get("PORT")
-
+DEFAULT_GPT_TIMEOUT = float(os.environ.get("DEFAULT_GPT_TIMEOUT"))
+DEFAULT_GPT_TOKENS = int(os.environ.get("DEFAULT_GPT_TOKENS"))
 level = logging.getLevelName(LOGGER_MODE)
 
 LIMITS = {

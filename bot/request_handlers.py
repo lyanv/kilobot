@@ -2,7 +2,7 @@ from telegram import Update
 from telegram.ext import CallbackContext
 
 from settings import ADMIN_ID
-from .keyboard import get_approve_keyboard
+from .keyboard import get_approve_keyboard, get_restart_keyboard
 from .limits import set_user_limits, get_user_info
 
 
@@ -40,4 +40,4 @@ async def handle_request(update: Update, context: CallbackContext):
     else:
         text = "Заявка не одобрена"
 
-    await context.bot.send_message(chat_id=user_id, text=text)
+    await context.bot.send_message(chat_id=user_id, text=text, reply_markup=get_restart_keyboard())

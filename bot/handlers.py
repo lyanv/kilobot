@@ -78,7 +78,8 @@ async def start(update: Update, context: CallbackContext) -> None:
             reject_time = action_ts.strftime("%Y-%m-%d %H:%M:%S")
             answer = context.bot.send_message(
                 chat_id=update.effective_chat.id,
-                text=f"Ваша заявка была отклонена {reject_time}. Новая заявка через {REJECT_COOLING_PERIOD_DAYS} суток"
+                text=f"Ваша заявка была отклонена {reject_time}. Новая заявка через {REJECT_COOLING_PERIOD_DAYS} суток",
+                reply_markup=get_restart_keyboard()
             )
 
     else:
@@ -113,7 +114,7 @@ async def handle_message(update: Update, context: CallbackContext) -> None:
 
     error_message = await check_limits(user_id, db_user_data)
     if error_message:
-        await context.bot.send_message(chat_id=update.effective_chat.id, text=error_message)
+        await context.bot.send_message(chat_id=update.effective_chat.id, text=error_message, reply_markup=get_restart_keyboard())
         return
 
     if 'selected_model' not in context.user_data:

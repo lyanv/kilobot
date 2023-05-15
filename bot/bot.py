@@ -1,12 +1,12 @@
 from telegram.ext import CommandHandler, MessageHandler, filters, ApplicationBuilder, CallbackQueryHandler, \
     ConversationHandler
 
-from settings import TELEGRAM_API_KEY, DROP_DATA, ADMIN_ID
+from settings import TELEGRAM_API_KEY, DROP_DATA, ADMIN_ID, TG_READ_TIMEOUT
 from .handlers import start, restart_bot, handle_model_choice, handle_message, show_all_data, data, start_drop, \
     drop_data
 from .request_handlers import handle_request, request_access
 
-application = ApplicationBuilder().token(TELEGRAM_API_KEY).connect_timeout(600).build()
+application = ApplicationBuilder().token(TELEGRAM_API_KEY).read_timeout(TG_READ_TIMEOUT).build()
 application.bot_data["admin_id"] = ADMIN_ID
 application.add_handler(CommandHandler('Start', start))
 application.add_handler(MessageHandler(filters.Regex("^Перезапустить бота$"), restart_bot))

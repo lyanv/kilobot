@@ -21,6 +21,8 @@ WEBHOOKURL = os.environ.get("WEBHOOKURL")
 PORT = os.environ.get("PORT")
 DEFAULT_GPT_TIMEOUT = float(os.environ.get("DEFAULT_GPT_TIMEOUT"))
 DEFAULT_GPT_TOKENS = int(os.environ.get("DEFAULT_GPT_TOKENS"))
+TG_READ_TIMEOUT = float(os.environ.get("TG_READ_TIMEOUT"))
+
 level = logging.getLevelName(LOGGER_MODE)
 
 LIMITS = {

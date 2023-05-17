@@ -29,7 +29,7 @@ async def gpt_request(update, context) -> None:
                 "Authorization": f"Bearer {OPENAI_API_KEY}"
             },
             json={
-                "model": get_context_data_from_multiple(user_id, 'selected_model', context),
+                "model": await get_context_data_from_multiple(user_id, 'selected_model', context),
                 "messages": context.user_data['messages'],
                 "max_tokens": DEFAULT_GPT_TOKENS,
                 "temperature": 0.7,

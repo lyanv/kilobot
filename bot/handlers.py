@@ -12,10 +12,6 @@ from .model_request import gpt_request
 
 
 async def restart_bot(update: Update, context: CallbackContext):
-    user_id = update.effective_chat.id
-    context.user_data.clear()
-    await clear_context_db(user_id)
-    await context.bot.send_message(chat_id=update.effective_chat.id, text='Перезапуск бота')
     await start(update, context)
 
 
@@ -58,7 +54,11 @@ async def drop_data(update: Update) -> int:
 
 
 async def start(update: Update, context: CallbackContext) -> None:
-    user_id = update.effective_user.id
+    user_id = update.effective_chat.id
+
+    context.user_data.clear()
+    await clear_context_db(user_id)
+
     db_user_data = await get_user_info(user_id)
 
     if db_user_data is None or 'status' not in db_user_data:
@@ -122,7 +122,7 @@ async def handle_message(update: Update, context: CallbackContext) -> None:
         await restart_bot(update, context)
         return
 
-    sm_in_context = get_context_data_from_multiple(user_id, 'selected_model', context)
+    sm_in_context = await get_context_data_from_multiple(user_id, 'selected_model', context)
 
     if not sm_in_context:
         await restart_bot(update, context)

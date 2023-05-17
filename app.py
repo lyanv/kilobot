@@ -24,10 +24,6 @@ logging.basicConfig(level=level)
 async def main() -> None:
     application = ApplicationBuilder().token(TELEGRAM_API_KEY).read_timeout(TG_READ_TIMEOUT).build()
     application.add_handler(CommandHandler('Start', start))
-    application.add_handler(CallbackQueryHandler(request_access, pattern="^request_access$"))
-    application.add_handler(CallbackQueryHandler(handle_request, pattern="^(standard|reduced|unlimited|rejected):"))
-    application.add_handler(CallbackQueryHandler(handle_model_choice))
-    application.add_handler(MessageHandler(filters.TEXT & ~filters.COMMAND, handle_message))
     application.add_handler(MessageHandler(filters.Regex("^Перезапустить бота$"), restart_bot))
     application.add_handler(CommandHandler('data', data))
     application.add_handler(CallbackQueryHandler(show_all_data, pattern="^show_all_data$"))
@@ -40,6 +36,11 @@ async def main() -> None:
             fallbacks=[],
             allow_reentry=True
         ))
+    application.add_handler(CallbackQueryHandler(request_access, pattern="^request_access$"))
+    application.add_handler(CallbackQueryHandler(handle_request, pattern="^(standard|reduced|unlimited|rejected):"))
+    application.add_handler(CallbackQueryHandler(handle_model_choice))
+    application.add_handler(MessageHandler(filters.TEXT & ~filters.COMMAND, handle_message))
+
     application.bot_data["admin_id"] = ADMIN_ID
 
     @app.route('/telegram', methods=['POST'])

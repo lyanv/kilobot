@@ -12,7 +12,7 @@ async def clear_context_db(user_id):
             'context': firestore.DELETE_FIELD
         })
     except Exception as e:
-        logging.info(f"Ошибка при очистке контекста в базе данных: {e}")
+        logging.info(f"Database: {e}")
 
 
 async def set_context_to_db(user_id, doc_data: dict):

@@ -33,6 +33,7 @@ async def get_user_info(user_id: int):
 
 async def set_user_limits(user_id: int, status: str, user_name: str, user_fullname: str):
     doc_data = {
+        "userid": str(user_id),
         "user_name": user_name,
         "user_fullname": user_fullname,
         "status": status,
@@ -56,8 +57,12 @@ def create_reply_noreqs(limits):
 
 
 async def check_limits(user_id, db_user_data):
+    if db_user_data and db_user_data.get("status", None) == "unlimited":
+        return None
     daily_limit = db_user_data.get("limit_daily", None)
     weekly_limit = db_user_data.get("limit_weekly", None)
+    if not daily_limit:
+        return f"Вы не зарегистрированы. Подайте заявку на доступ."
     daily_requests = deque(maxlen=daily_limit)
     weekly_requests = deque(maxlen=weekly_limit)
 
@@ -87,19 +92,17 @@ async def check_limits(user_id, db_user_data):
         "weekly_requests": list(weekly_requests)
     })
 
-    if db_user_data.get("status") != "unlimited":
-        if len(daily_requests) >= daily_limit or len(weekly_requests) >= weekly_limit:
-            return f"Превышен лимит запросов"
+    if len(daily_requests) >= daily_limit or len(weekly_requests) >= weekly_limit:
+        return f"Превышен лимит запросов"
     else:
         return None
 
 
 async def update_request_data(user_id):
-    user_doc = db.collection('users').document(str(user_id))
-    db_user_data = await user_doc.get()
+    db_user_data = await db.collection('users').document(str(user_id)).get()
     daily_limit = db_user_data.get("limit_daily")
     weekly_limit = db_user_data.get("limit_weekly")
-    user_doc.update({
+    await db.collection('users').document(str(user_id)).update({
         "last_request_ts": datetime.now(tz).strftime("%Y-%m-%d %H:%M:%S")
     })
 
@@ -118,7 +121,7 @@ async def update_request_data(user_id):
     if len(current_weekly_requests) > weekly_limit:
         current_weekly_requests.pop(0)
 
-    await user_doc.update({
+    await db.collection('users').document(str(user_id)).update({
         "daily_requests": current_daily_requests,
         "weekly_requests": current_weekly_requests
     })

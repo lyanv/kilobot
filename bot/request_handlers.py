@@ -2,7 +2,9 @@ from telegram import Update
 from telegram.ext import CallbackContext
 
 from settings import ADMIN_ID
-from .keyboard import get_approve_keyboard, get_restart_keyboard
+from storage.database import set_context_to_db
+from .handlers import restart_bot
+from .keyboard import get_approve_keyboard
 from .limits import set_user_limits, get_user_info
 
 
@@ -11,6 +13,7 @@ async def request_access(update: Update, context: CallbackContext):
     user_name = update.effective_user.name
     user_fullname = update.effective_user.full_name
     context.user_data['status'] = 'pending'
+    await set_context_to_db(user_id, {"status": "pending"})
     await update.callback_query.edit_message_text("Заявка на рассмотрении.")
     await context.bot.send_message(
         chat_id=ADMIN_ID,
@@ -40,4 +43,5 @@ async def handle_request(update: Update, context: CallbackContext):
     else:
         text = "Заявка не одобрена"
 
-    await context.bot.send_message(chat_id=user_id, text=text, reply_markup=get_restart_keyboard())
+    await context.bot.send_message(chat_id=user_id, text=text)
+    await restart_bot(update, context)

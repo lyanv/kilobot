@@ -5,14 +5,17 @@ from telegram import Update
 from telegram.ext import CallbackContext, ConversationHandler
 
 from settings import REJECT_COOLING_PERIOD_DAYS, REQUEST_COOLING_PERIOD_SEC, DROP_DATA, tz
-from storage.database import db
+from storage.database import db, clear_context_db, set_context_to_db, get_context_data_from_multiple
 from .keyboard import get_model_choice_keyboard, get_restart_keyboard, get_request_access_keyboard, get_db_keyboard
 from .limits import cooldown, get_user_info, check_limits, update_request_data
 from .model_request import gpt_request
 
 
 async def restart_bot(update: Update, context: CallbackContext):
+    user_id = update.effective_chat.id
     context.user_data.clear()
+    await clear_context_db(user_id)
+    await context.bot.send_message(chat_id=update.effective_chat.id, text='Перезапуск бота')
     await start(update, context)
 
 
@@ -41,7 +44,7 @@ async def start_drop(update: Update, context: CallbackContext) -> int:
     return DROP_DATA
 
 
-async def drop_data(update: Update, context: CallbackContext) -> int:
+async def drop_data(update: Update) -> int:
     user_id_to_drop = update.message.text
     doc_ref = db.collection('users').document(user_id_to_drop)
 
@@ -93,8 +96,9 @@ async def start(update: Update, context: CallbackContext) -> None:
 
 async def handle_model_choice(update: Update, context: CallbackContext):
     query = update.callback_query
-    print(query)
     context.user_data['selected_model'] = query.data
+
+    await set_context_to_db(user_id=update.effective_chat.id, doc_data={'selected_model': query.data})
     await query.answer()
     await query.edit_message_text(text=f"Спросите что-нибудь у {query.data}.")
 
@@ -114,10 +118,13 @@ async def handle_message(update: Update, context: CallbackContext) -> None:
 
     error_message = await check_limits(user_id, db_user_data)
     if error_message:
-        await context.bot.send_message(chat_id=update.effective_chat.id, text=error_message, reply_markup=get_restart_keyboard())
+        await context.bot.send_message(chat_id=update.effective_chat.id, text=error_message)
+        await restart_bot(update, context)
         return
 
-    if 'selected_model' not in context.user_data:
+    sm_in_context = get_context_data_from_multiple(user_id, 'selected_model', context)
+
+    if not sm_in_context:
         await restart_bot(update, context)
         return
 

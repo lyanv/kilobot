@@ -4,7 +4,7 @@ WORKDIR /app
 ADD . /app
 COPY requirements.txt .
 RUN pip install --no-cache-dir -r requirements.txt
-COPY chatbots-383016-e4fda5d3fbe6.json /app/chatbots-383016-e4fda5d3fbe6.json
+COPY cbots-392507-6ec7ca6e9770.json /app/cbots-392507-6ec7ca6e9770.json
 COPY .env .env
 ENV QUART_APP=app.py
 CMD ["python", "./app.py"]

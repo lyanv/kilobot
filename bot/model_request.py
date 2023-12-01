@@ -1,48 +1,117 @@
 import re
 
 import httpx
+import json
 from telegram.constants import ParseMode
-
 
 from bot.keyboard import get_restart_keyboard
 from settings import OPENAI_API_KEY, DEFAULT_GPT_TIMEOUT, DEFAULT_GPT_TOKENS
 from storage.database import get_context_data_from_multiple
+import base64
 
 
 # TODO: написать обработчика накопления контекста (лимит контекста)
 async def gpt_request(update, context) -> None:
-    user_message = update.message.text
+    from bot.handlers import restart_bot
+
+    caption = update.message.caption if update.message.caption else "Пиши " \
+                                                                    "по-русски"
+
+    user_message = update.message.text if update.message.text else caption
     user_id = update.effective_chat.id
+    selected_model = await get_context_data_from_multiple(
+        user_id,
+        'selected_model',
+        context)
+
+    models_dict = {'GPT-4-vision': 'gpt-4-vision-preview', 'GPT-4-latest':
+        'gpt-4-1106-preview'}
+
+    selected_model = models_dict[selected_model]
+
+    vision = 'vision' in selected_model.lower()
+
+    user_default_text = "Что изображено?" if vision else "Пиши по-русски"
+
+    start_content = [
+        {"role": "system", "content": "ИИ-ассистент"},
+        {"role": "user", "content": [
+            {"type": "text", "text": user_default_text}
+        ]}
+    ]
 
     if 'messages' not in context.user_data:
-        context.user_data['messages'] = [
-            {"role": "system", "content": "ИИ-ассистент"}
-        ]
+        context.user_data['messages'] = start_content
 
-    context.user_data['messages'].append({"role": "user", "content": user_message})
+    context.user_data['messages'].append(
+        {"role": "user", "content": user_message})
+
+    if update.message.photo and vision:
+        pic = await update.message.photo[-1].get_file()
+        image_bytes = await pic.download_as_bytearray()
+        image = base64.b64encode(image_bytes).decode('utf-8')
+        image_content = {
+            "type": "image_url",
+            "image_url": {
+                "url": f"data:image/jpeg;base64,{image}",
+            }
+        }
+
+        start_content[1]['content'].append(image_content)
+
+        context.user_data['messages'].append(
+            {"role": "user", "content": [image_content]})
 
     async with httpx.AsyncClient(timeout=DEFAULT_GPT_TIMEOUT) as client:
-        response = await client.post(
-            "https://api.openai.com/v1/chat/completions",
-            headers={
-                "Content-Type": "application/json",
-                "Authorization": f"Bearer {OPENAI_API_KEY}"
-            },
-            json={
-                "model": await get_context_data_from_multiple(user_id, 'selected_model', context),
-                "messages": context.user_data['messages'],
-                "max_tokens": DEFAULT_GPT_TOKENS,
-                "temperature": 0.7,
-            },
-        )
-    if 'choices' in response.json() and response.json()['choices']:
-        resp = response.json()['choices'][0]['message']['content']
-    else:
+        try:
+            response = await client.post(
+                "https://api.openai.com/v1/chat/completions",
+                headers={
+                    "Content-Type": "application/json",
+                    "Authorization": f"Bearer {OPENAI_API_KEY}"
+                },
+                json={
+                    "model": selected_model,
+                    "messages": context.user_data['messages'],
+                    "max_tokens": DEFAULT_GPT_TOKENS,
+                    "temperature": 0.7,
+                },
+            )
+            response.raise_for_status()
+        except httpx.HTTPStatusError as e:
+            await context.bot.send_message(
+                chat_id=update.effective_chat.id,
+                text=f"Ошибка HTTP при запросе в OpenAI: {e.response.status_code}"
+            )
+            await restart_bot(update, context)
+            return
+        except httpx.RequestError as e:
+
+            await context.bot.send_message(
+                chat_id=update.effective_chat.id,
+                text="Произошла сетевая ошибка при запросе в OpenAI."
+            )
+            await restart_bot(update, context)
+            return
+        except Exception as e:
+            await context.bot.send_message(
+                chat_id=update.effective_chat.id,
+                text="Произошла неизвестная ошибка."
+            )
+            await restart_bot(update, context)
+            return
+    try:
+
+        if 'choices' in response.json() and response.json()['choices']:
+            resp = response.json()['choices'][0]['message']['content']
+        else:
+            await restart_bot(update, context)
+            return
+    except json.JSONDecodeError:
         await context.bot.send_message(
             chat_id=update.effective_chat.id,
-            text="Ошибка запроса в OpenAI."
+            text="Ошибка обработки ответа от OpenAI."
         )
-        from bot.handlers import restart_bot
         await restart_bot(update, context)
         return
 
@@ -66,4 +135,5 @@ async def gpt_request(update, context) -> None:
                                        reply_markup=get_restart_keyboard(),
                                        parse_mode=mode)
 
-    context.user_data['messages'].append({"role": "assistant", "content": resp})
+    context.user_data['messages'].append(
+        {"role": "assistant", "content": resp})

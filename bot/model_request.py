@@ -14,53 +14,51 @@ import base64
 async def gpt_request(update, context) -> None:
     from bot.handlers import restart_bot
 
-    caption = update.message.caption if update.message.caption else "Пиши " \
-                                                                    "по-русски"
 
-    user_message = update.message.text if update.message.text else caption
     user_id = update.effective_chat.id
     selected_model = await get_context_data_from_multiple(
-        user_id,
-        'selected_model',
-        context)
+        user_id, 'selected_model', context)
 
-    models_dict = {'GPT-4-vision': 'gpt-4-vision-preview', 'GPT-4-latest':
-        'gpt-4-1106-preview'}
+    models_dict = {
+        'GPT-4-vision': 'gpt-4-vision-preview',
+        'GPT-4-latest': 'gpt-4-1106-preview'
+    }
 
     selected_model = models_dict[selected_model]
 
-    vision = 'vision' in selected_model.lower()
+    is_vision_enabled = 'vision' in selected_model.lower()
 
-    user_default_text = "Что изображено?" if vision else "Пиши по-русски"
+    user_message = update.message.text or update.message.caption or "Пиши по-русски"
 
-    start_content = [
-        {"role": "system", "content": "ИИ-ассистент"},
-        {"role": "user", "content": [
-            {"type": "text", "text": user_default_text}
-        ]}
-    ]
+    new_user_message = {
+        "role": "user",
+        "content": [{"type": "text", "text": user_message}]
+    }
+
+    if update.message.photo and is_vision_enabled:
+        pic = await update.message.photo[-2].get_file()
+        new_user_message["content"].append(
+            {"type": "image_url", "image_url": {"url": pic.file_path}}
+        )
+
+        if not update.message.caption:
+            new_user_message["content"].append(
+                {"type": "text", "text": "Что изображено"}
+            )
 
     if 'messages' not in context.user_data:
-        context.user_data['messages'] = start_content
+        context.user_data['messages'] = [
+            {"role": "system", "content": "ИИ-ассистент"},
+            new_user_message
+        ]
+    else:
+        context.user_data['messages'].append(new_user_message)
 
-    context.user_data['messages'].append(
-        {"role": "user", "content": user_message})
+    # TODO upload multiple images
 
-    if update.message.photo and vision:
-        pic = await update.message.photo[-1].get_file()
-        image_bytes = await pic.download_as_bytearray()
-        image = base64.b64encode(image_bytes).decode('utf-8')
-        image_content = {
-            "type": "image_url",
-            "image_url": {
-                "url": f"data:image/jpeg;base64,{image}",
-            }
-        }
 
-        start_content[1]['content'].append(image_content)
-
-        context.user_data['messages'].append(
-            {"role": "user", "content": [image_content]})
+    import logging
+    logging.info(context.user_data['messages'])
 
     async with httpx.AsyncClient(timeout=DEFAULT_GPT_TIMEOUT) as client:
         try:

@@ -7,7 +7,6 @@ from telegram.constants import ParseMode
 from bot.keyboard import get_restart_keyboard
 from settings import OPENAI_API_KEY, DEFAULT_GPT_TIMEOUT, DEFAULT_GPT_TOKENS
 from storage.database import get_context_data_from_multiple
-import base64
 
 
 # TODO: написать обработчика накопления контекста (лимит контекста)
@@ -55,10 +54,6 @@ async def gpt_request(update, context) -> None:
         context.user_data['messages'].append(new_user_message)
 
     # TODO upload multiple images
-
-
-    import logging
-    logging.info(context.user_data['messages'])
 
     async with httpx.AsyncClient(timeout=DEFAULT_GPT_TIMEOUT) as client:
         try:
